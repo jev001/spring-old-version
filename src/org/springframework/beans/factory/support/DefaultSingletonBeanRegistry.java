@@ -232,6 +232,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	protected void removeSingleton(String beanName) {
 		this.singletonObjects.remove(beanName);
 		this.registeredSingletons.remove(beanName);
+		//补充删除singleton 原因后续补充 todo
+		this.earlySingleObject.remove(beanName);
 	}
 
 	public boolean containsSingleton(String beanName) {
