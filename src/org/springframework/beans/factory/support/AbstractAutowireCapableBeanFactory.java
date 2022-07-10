@@ -475,8 +475,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
-		if (!this.allowRawInjectionDespiteWrapping && originalBean != bean &&
+//		if (!this.allowRawInjectionDespiteWrapping && originalBean != bean &&
+//				mbd.isSingleton() && hasDependentBean(beanName)) {
+		// 增加了当获取到的bean和原始bean===>一样 就代表着此时是空壳bean,需要获取到真正的bean才行
+		if (!this.allowRawInjectionDespiteWrapping  &&
 				mbd.isSingleton() && hasDependentBean(beanName)) {
+			// 从中获取看看能不能获取到early中的bean
+			Object earlySingletonReference = getSingleton(beanName);
+			if (bean == originalBean) {
+				bean = earlySingletonReference;
+			}
 			String[] dependentBeans = getDependentBeans(beanName);
 			Set actualDependentBeans = new LinkedHashSet(dependentBeans.length);
 			for (int i = 0; i < dependentBeans.length; i++) {

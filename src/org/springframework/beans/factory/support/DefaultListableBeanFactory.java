@@ -652,6 +652,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	protected Map findAutowireCandidates(String beanName, Class requiredType, DependencyDescriptor descriptor) {
 		String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(this, requiredType);
 		Map result = new LinkedHashMap(candidateNames.length);
+		// issue 自己注入自己的情况没有考虑到, 此时如果进行了自我注入, 那么将会获取不到bean bean返回空集合, 那么在上一步就会显示成注入为空
+		// 所以为了解决自我注入的问题, 将会在后序判断中使用到如果是自我注入的情况
 		for (Iterator it = this.resolvableDependencies.keySet().iterator(); it.hasNext();) {
 			Class autowiringType = (Class) it.next();
 			if (autowiringType.isAssignableFrom(requiredType)) {
