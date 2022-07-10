@@ -448,8 +448,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
-		if (mbd.isSingleton() && this.allowCircularReferences &&
-				isSingletonCurrentlyInCreation(beanName)) {
+		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
+				isSingletonCurrentlyInCreation(beanName));
+		if (earlySingletonExposure) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
@@ -478,32 +479,35 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 //		if (!this.allowRawInjectionDespiteWrapping && originalBean != bean &&
 //				mbd.isSingleton() && hasDependentBean(beanName)) {
 		// 增加了当获取到的bean和原始bean===>一样 就代表着此时是空壳bean,需要获取到真正的bean才行
-		if (!this.allowRawInjectionDespiteWrapping  &&
-				mbd.isSingleton() && hasDependentBean(beanName)) {
-			// 从中获取看看能不能获取到early中的bean
-			Object earlySingletonReference = getSingleton(beanName);
-			if (bean == originalBean) {
-				bean = earlySingletonReference;
-			}
-			String[] dependentBeans = getDependentBeans(beanName);
-			Set actualDependentBeans = new LinkedHashSet(dependentBeans.length);
-			for (int i = 0; i < dependentBeans.length; i++) {
-				String dependentBean = dependentBeans[i];
-				if (!removeSingletonIfCreatedForTypeCheckOnly(dependentBean)) {
-					actualDependentBeans.add(dependentBean);
+		if(earlySingletonExposure){
+			if (!this.allowRawInjectionDespiteWrapping  &&
+					mbd.isSingleton() && hasDependentBean(beanName)) {
+				// 从中获取看看能不能获取到early中的bean
+				Object earlySingletonReference = getSingleton(beanName);
+				if (bean == originalBean) {
+					bean = earlySingletonReference;
+				}
+				String[] dependentBeans = getDependentBeans(beanName);
+				Set actualDependentBeans = new LinkedHashSet(dependentBeans.length);
+				for (int i = 0; i < dependentBeans.length; i++) {
+					String dependentBean = dependentBeans[i];
+					if (!removeSingletonIfCreatedForTypeCheckOnly(dependentBean)) {
+						actualDependentBeans.add(dependentBean);
+					}
+				}
+				if (!actualDependentBeans.isEmpty()) {
+					throw new BeanCurrentlyInCreationException(beanName,
+							"Bean with name '" + beanName + "' has been injected into other beans [" +
+									StringUtils.collectionToCommaDelimitedString(actualDependentBeans) +
+									"] in its raw version as part of a circular reference, but has eventually " +
+									"been wrapped (for example as part of auto-proxy creation). " +
+									"This means that said other beans do not use the final version of the bean. " +
+									"This is often the result of over-eager type matching - consider using " +
+									"'getBeanNamesOfType' with the 'allowEagerInit' flag turned off, for example.");
 				}
 			}
-			if (!actualDependentBeans.isEmpty()) {
-				throw new BeanCurrentlyInCreationException(beanName,
-						"Bean with name '" + beanName + "' has been injected into other beans [" +
-						StringUtils.collectionToCommaDelimitedString(actualDependentBeans) +
-						"] in its raw version as part of a circular reference, but has eventually " +
-						"been wrapped (for example as part of auto-proxy creation). " +
-						"This means that said other beans do not use the final version of the bean. " +
-						"This is often the result of over-eager type matching - consider using " +
-						"'getBeanNamesOfType' with the 'allowEagerInit' flag turned off, for example.");
-			}
 		}
+
 
 		// Register bean as disposable.
 		registerDisposableBeanIfNecessary(beanName, originalBean, mbd);
