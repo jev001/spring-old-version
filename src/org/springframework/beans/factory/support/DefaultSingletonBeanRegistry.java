@@ -108,6 +108,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	private final Map dependenciesForBeanMap = CollectionFactory.createConcurrentMapIfPossible(16);
 
 
+
+	// 在2.5.2中仿造spring2.5.3的将bean提前透出放入
+	private final Map earlySingleObject = CollectionFactory.createConcurrentMapIfPossible(16);
+
+
+
+
 	public void registerSingleton(String beanName, Object singletonObject) throws IllegalStateException {
 		Assert.notNull(beanName, "'beanName' must not be null");
 		synchronized (this.singletonObjects) {
@@ -134,8 +141,25 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		}
 	}
 
+	// 添加创建中的bean放入earlyObjects中
+	protected void addEarlySingleton(String beanName, Object bean){
+		synchronized (this.singletonObjects){
+			if (!this.singletonObjects.containsKey(beanName)) {
+				this.earlySingleObject.put(beanName,bean);
+			}
+		}
+	}
+
 	public Object getSingleton(String beanName) {
+		// 从单例池中无法找到
 		Object singletonObject = this.singletonObjects.get(beanName);
+		if (singletonObject == null) {
+			synchronized (this.singletonObjects) {
+				// 从早期暴露bean中找寻
+				singletonObject = this.earlySingleObject.get(beanName);
+				logger.info(String.format("进入:[]===>earlySingleObject从早期bean中查找 beanName=[%s],obj=[%s]", beanName, singletonObject));
+			}
+		}
 		return (singletonObject != NULL_OBJECT ? singletonObject : null);
 	}
 

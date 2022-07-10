@@ -390,6 +390,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 
 				try {
+					// 在post能做做到返回所需要的数据之前就有bean返回了 那么就不存在循环依赖问题?
 					// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
 					Object bean = resolveBeforeInstantiation(beanName, mbd);
 					if (bean != null) {
@@ -453,7 +454,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.debug("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
-			addSingleton(beanName, bean);
+			// 只要是创建过程中的 都缓存下来 提前暴露了,在创建完成后. 又会有一次addSingleton的塞入,按照前后关系的作用.
+			// 后续的完整bean肯定会覆盖此次塞入的earlyObject
+//			addSingleton(beanName, bean);
+			addEarlySingleton(beanName,bean);
 		}
 
 		// Initialize the bean instance.
@@ -498,6 +502,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		return bean;
 	}
+
 
 	/**
 	 * Predict the eventual bean type for the given bean.
