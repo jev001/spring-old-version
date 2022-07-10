@@ -462,10 +462,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// Initialize the bean instance.
-		Object originalBean = bean;
+		Object exposeBean = bean;
 		try {
 			populateBean(beanName, mbd, instanceWrapper);
-			bean = initializeBean(beanName, bean, mbd);
+			exposeBean = initializeBean(beanName, exposeBean, mbd);
 		}
 		catch (Throwable ex) {
 			if (ex instanceof BeanCreationException && beanName.equals(((BeanCreationException) ex).getBeanName())) {
@@ -484,8 +484,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					mbd.isSingleton() && hasDependentBean(beanName)) {
 				// 从中获取看看能不能获取到early中的bean
 				Object earlySingletonReference = getSingleton(beanName);
-				if (bean == originalBean) {
-					bean = earlySingletonReference;
+				if (exposeBean == bean) {
+					exposeBean = earlySingletonReference;
 				}
 				String[] dependentBeans = getDependentBeans(beanName);
 				Set actualDependentBeans = new LinkedHashSet(dependentBeans.length);
@@ -510,9 +510,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 
 		// Register bean as disposable.
-		registerDisposableBeanIfNecessary(beanName, originalBean, mbd);
+		registerDisposableBeanIfNecessary(beanName, bean, mbd);
 
-		return bean;
+		return exposeBean;
 	}
 
 
