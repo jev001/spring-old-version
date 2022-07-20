@@ -160,6 +160,6 @@ local.properties
 
 #*.iml
 #.idea
-./target
+/target
 readme.txt
 .name
